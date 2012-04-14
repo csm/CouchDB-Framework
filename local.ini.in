@@ -1,0 +1,22 @@
+; local.ini.in -- local configuration for user CouchDB.
+; To create local.ini, replace the following:
+;
+;   %frameworkdir% -- Replace with the location of CouchDB.framework. E.g., /Applications/Memeo\ C1/Contents/Frameworks/CouchDb.framework
+;   %appsupportdir% -- Where to locate application state. E.g ~/Library/Application\ Support/
+;   %logdir% -- where to place log files. E.g. ~/Library/Logs/Memeo\ C1/
+;   %port% -- Replace with the port number CouchDB will listen on.
+
+[query_servers]
+javascript = %frameworkdir%/Versions/Current/Resources/bin/couchjs %frameworkdir%/Versions/Current/Resources/share/couchdb/server/main.js
+coffeescript = %frameworkdir%/Versions/Current/Resources/bin/couchjs %frameworkdir%/Versions/Current/Resources/share/couchdb/server/main-coffee.js
+
+[httpd]
+port = %port%
+
+[couchdb]
+database_dir = %appsupportdir%/couchdb
+view_index_dir = %appsupportdir%/couchdb
+util_driver_dir = %frameworkdir%/Versions/Current/Resources/lib/couchdb/erlang/lib/couch-1.2.0/priv/lib
+
+[log]
+file = %logdir%/couch.log

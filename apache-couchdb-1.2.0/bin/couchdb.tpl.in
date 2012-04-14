@@ -12,22 +12,31 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+set -v
+COUCHDB_HOME=$(cd $(dirname $0)/..; pwd)
+bindir=${COUCHDB_HOME}/bin
+localconfdir=${COUCHDB_HOME}/etc/couchdb
+localstatedir=${HOME}/Library/Application\ Support/Memeo\ C1
+locallibdir=${COUCHDB_HOME}/lib
+localerlanglibdir=${locallibdir}/erlang/lib
+
 BACKGROUND=false
-DEFAULT_CONFIG_DIR=%localconfdir%/default.d
-DEFAULT_CONFIG_FILE=%localconfdir%/%defaultini%
+DEFAULT_CONFIG_DIR=${localconfdir}/default.d
+DEFAULT_CONFIG_FILE=${localconfdir}/%defaultini%
 ERL_OS_MON_OPTIONS="-os_mon \
     start_memsup false \
     start_cpu_sup false \
     disk_space_check_interval 1 \
     disk_almost_full_threshold 1"
 ERL_START_OPTIONS="$ERL_OS_MON_OPTIONS -sasl errlog_type error +K true +A 4"
+ERL="${bindir}/erl"
 HEART_BEAT_TIMEOUT=11
-HEART_COMMAND="%bindir%/%couchdb_command_name% -k"
+HEART_COMMAND="${bindir}/%couchdb_command_name% -k"
 INTERACTIVE=false
 KILL=false
-LOCAL_CONFIG_DIR=%localconfdir%/local.d
-LOCAL_CONFIG_FILE=%localconfdir%/%localini%
-PID_FILE=%localstatedir%/run/couchdb/couchdb.pid
+LOCAL_CONFIG_DIR=${localconfdir}/local.d
+LOCAL_CONFIG_FILE=${localconfdir}/%localini%
+PID_FILE="${localstatedir}/run/couchdb/couchdb.pid"
 RECURSED=false
 RESET_CONFIG=true
 RESPAWN_TIMEOUT=0
@@ -113,8 +122,8 @@ display_error () {
 }
 
 _get_pid () {
-    if test -f $PID_FILE; then
-        PID=`cat $PID_FILE`
+    if test -f "$PID_FILE"; then
+        PID=`cat "$PID_FILE"`
     fi
     echo $PID
 }
@@ -181,32 +190,32 @@ check_environment () {
     if test "$BACKGROUND" != "true"; then
         return
     fi
-    touch $PID_FILE 2> /dev/null || true
-    touch $STDOUT_FILE 2> /dev/null || true
-    touch $STDERR_FILE 2> /dev/null || true
+    touch "$PID_FILE" 2> /dev/null || true
+    touch "$STDOUT_FILE" 2> /dev/null || true
+    touch "$STDERR_FILE" 2> /dev/null || true
     message_prefix="Apache CouchDB needs write permission on the"
-    if test ! -w $PID_FILE; then
+    if test ! -w "$PID_FILE"; then
         echo "$message_prefix PID file: $PID_FILE" >&2
         false
     fi
-    if test ! -w $STDOUT_FILE; then
+    if test ! -w "$STDOUT_FILE"; then
         echo "$message_prefix STDOUT file: $STDOUT_FILE" >&2
         false
     fi
-    if test ! -w $STDERR_FILE; then
+    if test ! -w "$STDERR_FILE"; then
         echo "$message_prefix STDERR file: $STDERR_FILE" >&2
         false
     fi
     message_prefix="Apache CouchDB needs a regular"
-    if test `echo 2> /dev/null >> $PID_FILE; echo $?` -gt 0; then
+    if test `echo 2> /dev/null >> "$PID_FILE"; echo $?` -gt 0; then
         echo "$message_prefix PID file: $PID_FILE" >&2
         false
     fi
-    if test `echo 2> /dev/null >> $STDOUT_FILE; echo $?` -gt 0; then
+    if test `echo 2> /dev/null >> "$STDOUT_FILE"; echo $?` -gt 0; then
         echo "$message_prefix STDOUT file: $STDOUT_FILE" >&2
         false
     fi
-    if test `echo 2> /dev/null >> $STDERR_FILE; echo $?` -gt 0; then
+    if test `echo 2> /dev/null >> "$STDERR_FILE"; echo $?` -gt 0; then
         echo "$message_prefix STDERR file: $STDERR_FILE" >&2
         false
     fi
@@ -224,13 +233,13 @@ start_couchdb () {
         interactive_option=""
     fi
     if test "$BACKGROUND" = "true"; then
-        touch $PID_FILE
+        touch "$PID_FILE"
         interactive_option="+Bd -noinput"
     fi
-    command="%ERL% $interactive_option $ERL_START_OPTIONS \
-        -env ERL_LIBS %localerlanglibdir% -couch_ini $start_arguments -s couch"
+    command="\"${ERL}\" $interactive_option $ERL_START_OPTIONS \
+        -env ERL_LIBS \"${localerlanglibdir}\" -couch_ini $start_arguments -s couch"
     if test "$BACKGROUND" = "true" -a "$RECURSED" = "false"; then
-        $0 $background_start_arguments -b -r $RESPAWN_TIMEOUT -p $PID_FILE \
+        eval "$0" $background_start_arguments -b -r $RESPAWN_TIMEOUT -p "$PID_FILE" \
             -o $STDOUT_FILE -e $STDERR_FILE -R &
         echo "Apache CouchDB has started, time to relax."
     else
@@ -238,7 +247,7 @@ start_couchdb () {
             while true; do
                 export HEART_COMMAND
                 export HEART_BEAT_TIMEOUT
-                `eval $command -pidfile $PID_FILE -heart \
+                `eval $command -pidfile "$PID_FILE" -heart \
                     >> $STDOUT_FILE 2>> $STDERR_FILE` || true
                 PID=`_get_pid`
                 if test -n "$PID"; then
@@ -269,7 +278,7 @@ stop_couchdb () {
     PID=`_get_pid`
     if test -n "$PID"; then
         if test "$1" = "false"; then
-            echo > $PID_FILE
+            echo > "$PID_FILE"
         fi
         if kill -0 $PID 2> /dev/null; then
             if kill -1 $PID 2> /dev/null; then
