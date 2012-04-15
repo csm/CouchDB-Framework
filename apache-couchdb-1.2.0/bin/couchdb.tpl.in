@@ -12,13 +12,13 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-set -v
+#set -v
 COUCHDB_HOME=$(cd $(dirname $0)/..; pwd)
 bindir=${COUCHDB_HOME}/bin
 localconfdir=${COUCHDB_HOME}/etc/couchdb
 localstatedir=${HOME}/Library/Application\ Support/Memeo\ C1
 locallibdir=${COUCHDB_HOME}/lib
-localerlanglibdir=${locallibdir}/erlang/lib
+localerlanglibdir=${locallibdir}/couchdb/erlang/lib
 
 BACKGROUND=false
 DEFAULT_CONFIG_DIR=${localconfdir}/default.d

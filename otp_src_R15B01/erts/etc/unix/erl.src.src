@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # %CopyrightBegin%
 # 
@@ -17,10 +17,20 @@
 # 
 # %CopyrightEnd%
 #
-SOURCE="$0"
-while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ] ; do SOURCE="$(dirname "$SOURCE")/$(readlink "$SOURCE")"; done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-ROOTDIR=%FINAL_ROOTDIR%
+FINAL_ROOTDIR=%FINAL_ROOTDIR%
+# Use FINAL_ROOTDIR during bootstrap...
+if [[ "$DIR" == *bootstrap/bin* ]]; then
+    ROOTDIR=$FINAL_ROOTDIR
+# Installed it is either in ROOT/lib/erlang/erts-%VSN%/bin...
+elif [[ "$DIR" == *erts-%VSN%* ]]; then
+    ROOTDIR=$(cd "${DIR}/../.."; pwd)
+# Or it is in ROOT/lib/erlang/bin.
+else
+    ROOTDIR=$(cd "${DIR}/.."; pwd)
+fi
 BINDIR=$ROOTDIR/erts-%VSN%/bin
 EMU=%EMULATOR%%EMULATOR_NUMBER%
 PROGNAME=`echo $0 | sed 's/.*\///'`
