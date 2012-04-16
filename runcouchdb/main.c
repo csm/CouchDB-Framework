@@ -20,6 +20,7 @@
 #include <libgen.h>
 #include <getopt.h>
 #include <signal.h>
+#include <fcntl.h>
 
 static int
 readpid(char *path)
@@ -106,17 +107,27 @@ static void display_help(char *progname)
            "Report bugs at <https://issues.apache.org/jira/browse/COUCHDB>.\n");
 }
 
-static char **append_config_file(char **paths, const char *path)
+static char **append_array(char **array, const char *str)
 {
     int count = 0;
-    if (paths != NULL)
+    if (array != NULL)
     {
-        while (paths[count] != NULL) count++;
+        while (array[count] != NULL) count++;
     }
-    paths = realloc(paths, (count + 2) * sizeof(char *));
-    paths[count] = strdup(path);
-    paths[count+1] = NULL;
-    return paths;
+    array = realloc(array, (count + 2) * sizeof(char *));
+    array[count] = strdup(str);
+    array[count+1] = NULL;
+    return array;
+}
+
+static char **concat_arrays(char **array, char **array2)
+{
+    int i = 0;
+    while (array2[i] != NULL)
+    {
+        array = append_array(array, array2[i]);
+    }
+    return array;
 }
 
 static char **append_config_dir(char **paths, const char *dir)
@@ -165,6 +176,10 @@ int main(int argc, const char * argv[], const char *env[], const char *path[])
     const char *stdout_file = "couchdb.stdout";
 
     char **config_files = NULL;
+    config_files = append_config_dir(config_files, default_config_dir);
+    config_files = append_array(config_files, default_config_file);
+    config_files = append_config_dir(config_files, local_config_dir);
+    config_files = append_array(config_files, local_config_file);
     int ch;
     const char *optstring = "hVa:A:ncibp:r:Ro:e:skd";
     while ((ch = getopt(argc, argv, optstring)) != -1)
@@ -180,7 +195,7 @@ int main(int argc, const char * argv[], const char *env[], const char *path[])
                 exit(0);
                 
             case 'a':
-                config_files = append_config_file(config_files, optarg);
+                config_files = append_array(config_files, optarg);
                 break;
                 
             case 'A':
@@ -238,6 +253,10 @@ int main(int argc, const char * argv[], const char *env[], const char *path[])
         }
     }
     
+#if DEBUG
+    printf("bindir: %s\nerl: %s\nlocalconfdir: %s\nlocalerlanglibdir: %s\nlocallibdir: %s\nlocalstatedir: %s\n", bindir, erl, localconfdir, localerlanglibdir, locallibdir, localstatedir);
+#endif
+    
     if (_kill || shutdown)
     {
         int pid = readpid(pid_file);
@@ -264,10 +283,55 @@ int main(int argc, const char * argv[], const char *env[], const char *path[])
     }
     else
     {
-        if (!recursed)
+        const char *interactive_options[] = { "+Bd", "-noinput", NULL };
+        if (interactive && !background)
+            interactive_options[0] = NULL;
+        if (background)
         {
+            pid_t child = fork();
+            if (child < 0)
+            {
+                perror("error forking");
+                exit(1);
+            }
+            if (child > 0)
+            {
+                FILE *f = fopen(pid_file, "w");
+                fprintf(f, "%d\n", child);
+                fclose(f);
+                exit(0);
+            }
         }
         
+        char **prog_arguments = NULL;
+        prog_arguments = append_array(prog_arguments, erl);
+        prog_arguments = concat_arrays(prog_arguments, interactive_options);
+        prog_arguments = concat_arrays(prog_arguments, erl_start_options);
+        prog_arguments = append_array(prog_arguments, "-env");
+        prog_arguments = append_array(prog_arguments, "ERL_LIBS");
+        prog_arguments = append_array(prog_arguments, localerlanglibdir);
+        prog_arguments = append_array(prog_arguments, "-couch_ini");
+        prog_arguments = concat_arrays(prog_arguments, config_files);
+        prog_arguments = append_array(prog_arguments, "-s");
+        prog_arguments = append_array(prog_arguments, "couch");
+        
+        if (background)
+        {
+            fflush(stdout);
+            int newout = open(stdout_file, O_CREAT|O_WRONLY);
+            int oldout = dup(fileno(stdout));
+            dup2(newout, oldout);
+            close(newout);
+            close(oldout);
+            fflush(stderr);
+            int newerr = open(stderr_file, O_CREAT|O_WRONLY);
+            int olderr = dup(fileno(stderr));
+            dup2(newerr, olderr);
+            close(newerr);
+            close(olderr);
+        }
+        
+        execve(erl, prog_arguments, env);
     }
     
     return 0;

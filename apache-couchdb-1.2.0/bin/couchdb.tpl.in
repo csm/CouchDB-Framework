@@ -306,7 +306,7 @@ stop_couchdb () {
 parse_script_option_list () {
     _load_config
     set +e
-    options=`getopt hVa:A:ncibp:r:Ro:e:skd $@`
+    options=`getopt hVa:A:ncibp:r:Ro:e:skd "$@"`
     if test ! $? -eq 0; then
         display_error
     fi
