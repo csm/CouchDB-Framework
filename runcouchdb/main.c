@@ -21,6 +21,8 @@
 #include <getopt.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 static int
 readpid(char *path)
@@ -67,15 +69,21 @@ static void display_version(char *progname)
 
 }
 
-static void display_help(char *progname)
+static void display_help(char *progname, char * const *erl_start_options)
 {
     printf("Usage: %s [OPTION]\n"
            "\n"
            "The %s command runs the Apache CouchDB server.\n"
            "\n"
-           "Erlang is called with:\n", progname, progname);
+           "Erlang is called with:\n   ", progname, progname);
+    int i = 0;
+    while (erl_start_options[i] != NULL)
+    {
+        printf(" %s", erl_start_options[i]);
+        i++;
+    }
            //$ERL_START_OPTIONS
-    printf("\n"
+    printf("\n\n"
            "Erlang inherits the environment of this command.\n"
            "\n"
            "You can override these options using the environment:\n"
@@ -126,13 +134,46 @@ static char **concat_arrays(char **array, char **array2)
     while (array2[i] != NULL)
     {
         array = append_array(array, array2[i]);
+        i++;
     }
     return array;
 }
 
 static char **append_config_dir(char **paths, const char *dir)
 {
+    DIR *d = opendir(dir);
+    struct dirent *ent;
+    if (d == NULL)
+    {
+        perror(dir);
+        return paths;
+    }
+    while ((ent = readdir(d)) != NULL)
+    {
+        size_t len = strlen(ent->d_name);
+        if (len < 4)
+            continue;
+        if (strcmp(".ini", ent->d_name + len - 4) == 0)
+        {
+            paths = append_array(paths, ent->d_name);
+        }
+    }
     return paths;
+}
+
+int mkdirs(const char *path)
+{
+    struct stat st;
+    if (stat(path, &st) == 0 && S_ISDIR(st.st_mode))
+        return 0;
+    char *parent = strdup(dirname(path));
+    if (mkdirs(parent) != 0)
+    {
+        free(parent);
+        return -1;
+    }
+    free(parent);
+    return mkdir(path, 0777);
 }
 
 int main(int argc, const char * argv[], const char *env[], const char *path[])
@@ -144,7 +185,7 @@ int main(int argc, const char * argv[], const char *env[], const char *path[])
     char *bindir = pathappend(home, "bin");
     char *localconfdir = pathappend(home, "etc/couchdb");
     char *locallibdir = pathappend(home, "lib");
-    char *localerlanglibdir = pathappend(home, "couchdb/erlang/lib");
+    char *localerlanglibdir = pathappend(locallibdir, "couchdb/erlang/lib");
     char *localstatedir = pathappend(getenv("HOME"), "Library/Application Support/CouchDB");
     int background = 0;
     char *default_config_dir = pathappend(localconfdir, "default.d");
@@ -187,7 +228,7 @@ int main(int argc, const char * argv[], const char *env[], const char *path[])
         switch (ch)
         {
             case 'h':
-                display_help(argv[0]);
+                display_help(argv[0], erl_start_options);
                 exit(0);
                 
             case 'V':
@@ -296,9 +337,24 @@ int main(int argc, const char * argv[], const char *env[], const char *path[])
             }
             if (child > 0)
             {
+                char *dir = strdup(dirname(pid_file));
+                mkdirs(dir);
                 FILE *f = fopen(pid_file, "w");
                 fprintf(f, "%d\n", child);
                 fclose(f);
+                
+                int wait = 4;
+                while (wait > 0)
+                {
+                    if (kill(child, 0) != 0)
+                    {
+                        fprintf(stderr, "Failed to launch CouchDB.\n");
+                        exit(1);
+                    }
+                    usleep(250000);
+                    wait--;
+                }
+                printf("Apache CouchDB has started, time to relax.\n");
                 exit(0);
             }
         }
@@ -330,6 +386,19 @@ int main(int argc, const char * argv[], const char *env[], const char *path[])
             close(newerr);
             close(olderr);
         }
+        
+#if DEBUG
+        printf("execve(%s, {", erl);
+        {
+            int __x = 0;
+            while (prog_arguments[__x] != NULL)
+            {
+                printf("%s%s", prog_arguments[__x], prog_arguments[__x+1] == NULL ? "" : ", ");
+                __x++;
+            }
+            printf("}, env...);\n");
+        }
+#endif
         
         execve(erl, prog_arguments, env);
     }
