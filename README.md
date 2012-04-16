@@ -7,7 +7,6 @@ The changes here should make it possible to place this framework anywhere on the
 Notes:
 
 1. You should use a custom config file to specify paths. In particular:
-
     * `[query_servers] javascript` and `coffeescript` -- you need to specify *where the framework is located* and the paths to these support files in your framework.
     * `[couchdb] database_dir`, `view_index_dir` -- you should specify a location for these either in some shared system directory, or in the user's home directory (e.g., under `${HOME}/Library/Application Support/Your App`).
     * `[couchdb] util_driver_dir` -- needs to be set to the location within your framework's install path, as above.
