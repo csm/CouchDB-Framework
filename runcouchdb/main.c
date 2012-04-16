@@ -213,8 +213,8 @@ int main(int argc, const char * argv[], const char *env[], const char *path[])
     int script_error = 1;
     int script_ok = 0;
     int shutdown = 0;
-    const char *stderr_file = "couchdb.stderr";
-    const char *stdout_file = "couchdb.stdout";
+    const char *stderr_file = "/dev/null";
+    const char *stdout_file = "/dev/null";
 
     char **config_files = NULL;
     config_files = append_config_dir(config_files, default_config_dir);
