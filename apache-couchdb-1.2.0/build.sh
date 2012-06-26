@@ -17,8 +17,8 @@ case "$action" in
         export PATH=${BUILT_PRODUCTS_DIR}/icu/bin:$PATH
         mkdir -p ${CONFIGURATION_TEMP_DIR}/apache-couchdb-build
         cd ${CONFIGURATION_TEMP_DIR}/apache-couchdb-build
-        LIBS="-lstdc++" CPPFLAGS="-I${BUILT_PRODUCTS_DIR}/icu/include" ERL=${BUILT_PRODUCTS_DIR}/erlang/bin/erl ERLC=${BUILT_PRODUCTS_DIR}/erlang/bin/erlc ${SRCROOT}/apache-couchdb-1.2.0/configure --prefix=${BUILT_PRODUCTS_DIR}/apache-couchdb --with-js-include=${BUILT_PRODUCTS_DIR}/js/include --with-js-lib=${BUILT_PRODUCTS_DIR}/js/lib --with-erlang=${BUILT_PRODUCTS_DIR}/erlang/lib/erlang/usr/include
-        make -j8
+        CFLAGS="-arch i386" CXXFLAGS="-arch i386" LDFLAGS="-arch i386" LIBS="-lstdc++" CPPFLAGS="-I${BUILT_PRODUCTS_DIR}/icu/include" ERL=${BUILT_PRODUCTS_DIR}/erlang/bin/erl ERLC=${BUILT_PRODUCTS_DIR}/erlang/bin/erlc ${SRCROOT}/apache-couchdb-1.2.0/configure --prefix=${BUILT_PRODUCTS_DIR}/apache-couchdb --with-js-include=${BUILT_PRODUCTS_DIR}/js/include --with-js-lib=${BUILT_PRODUCTS_DIR}/js/lib --with-erlang=${BUILT_PRODUCTS_DIR}/erlang/lib/erlang/usr/include --disable-dependency-tracking
+        make 
         make install
         touch ${BUILT_PRODUCTS_DIR}/apache-couchdb/apache-couchdb-built
     ;;

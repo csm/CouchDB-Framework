@@ -145,13 +145,13 @@ init([Command, Options, PortOptions]) ->
     Spawnkiller = filename:join(PrivDir, "couchspawnkillable"),
     BaseProc = #os_proc{
         command=Command,
-        port=open_port({spawn, Spawnkiller ++ " " ++ Command}, PortOptions),
+        port=open_port({spawn, "'" ++ Spawnkiller ++ "' " ++ Command}, PortOptions),
         writer=fun writejson/2,
         reader=fun readjson/1
     },
     KillCmd = readline(BaseProc),
     Pid = self(),
-    ?LOG_DEBUG("OS Process Start :: ~p", [BaseProc#os_proc.port]),
+    ?LOG_INFO("OS Process Start :: ~p", [BaseProc#os_proc.port]),
     spawn(fun() ->
             % this ensure the real os process is killed when this process dies.
             erlang:monitor(process, Pid),

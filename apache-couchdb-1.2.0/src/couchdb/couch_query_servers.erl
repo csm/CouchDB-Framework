@@ -474,6 +474,7 @@ new_process(Langs, LangLimits, Lang) ->
         % we are below the limit for our language, make a new one
         case ets:lookup(Langs, Lang) of
         [{Lang, Mod, Func, Arg}] ->
+            ?LOG_ERROR("Will apply(~w, ~w, ~w), new_process(~w, ~w, ~w)", [Mod, Func, Arg, Langs, LangLimits, Lang]),
             {ok, Pid} = apply(Mod, Func, Arg),
             erlang:monitor(process, Pid),
             true = ets:insert(LangLimits, {Lang, Lim, Current+1}),

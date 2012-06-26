@@ -14,8 +14,8 @@ case "$action" in
         test -f ${BUILT_PRODUCTS_DIR}/nspr/nspr-built && exit 0
         mkdir -p ${CONFIGURATION_TEMP_DIR}/nspr-build
         cd ${CONFIGURATION_TEMP_DIR}/nspr-build
-        ${SRCROOT}/nspr-4.8.9/mozilla/nsprpub/configure --prefix=${BUILT_PRODUCTS_DIR}/nspr --enable-64bit --enable-macos-target=10.6
-        make
+        MACOSX_DEPLOYMENT_TARGET="10.6" CFLAGS="-arch i386" CXXFLAGS="-arch i386" LDFLAGS="-arch i386" ${SRCROOT}/nspr-4.8.9/mozilla/nsprpub/configure --prefix=${BUILT_PRODUCTS_DIR}/nspr --disable-64bit --enable-macos-target=10.6
+        make -j8
         make install
         touch ${BUILT_PRODUCTS_DIR}/nspr/nspr-built
     ;;

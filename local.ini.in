@@ -16,6 +16,7 @@ port = %port%
 [couchdb]
 database_dir = %appsupportdir%/couchdb
 view_index_dir = %appsupportdir%/couchdb
+uri_file = %appsupportdir$/couch.uri
 util_driver_dir = %frameworkdir%/Versions/Current/Resources/lib/couchdb/erlang/lib/couch-1.2.0/priv/lib
 
 [log]
