@@ -15,7 +15,7 @@ case "$action" in
         # First build i386
         mkdir -p ${CONFIGURATION_TEMP_DIR}/js-build-32
         cd ${CONFIGURATION_TEMP_DIR}/js-build-32
-        MACOSX_DEPLOYMENT_TARGET="10.6" AR="ar" CFLAGS="-arch i386" CXXFLAGS="-arch i386" LDFLAGS="-arch i386" ${SRCROOT}/js-1.8.5/js/src/configure --prefix=${BUILT_PRODUCTS_DIR}/js --with-nspr-prefix=${BUILT_PRODUCTS_DIR}/nspr --disable-md --target=i386-apple-darwin10.0.0 --disable-shared-js
+        MACOSX_DEPLOYMENT_TARGET="10.6" AR="ar" CC="clang" CXX="clang++" CFLAGS="-arch i386" CXXFLAGS="-arch i386" LDFLAGS="-arch i386" ${SRCROOT}/js-1.8.5/js/src/configure --prefix=${BUILT_PRODUCTS_DIR}/js --with-nspr-prefix=${BUILT_PRODUCTS_DIR}/nspr --disable-md --target=i386-apple-darwin10.0.0 --disable-shared-js
         make -j8
         make install
         # Now build x86_64
